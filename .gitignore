@@ -1,3 +1,5 @@
 .nvmrc
 build/
 node_modules/
+.cache/
+.clangd
