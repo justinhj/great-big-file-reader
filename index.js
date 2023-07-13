@@ -14,10 +14,10 @@ async function openFile(filePath) {
     console.log(`file ${filePath} length is ${len}`);
 
     console.log(`mmapping ${filePath}`); 
-
-    let object = addon.mmapFileFromFileDescriptor(fileDescriptor.fd);
-
-    console.log(`object ${JSON.stringify(object)}`); 
+    let mapping = addon.mmapFileFromFileDescriptor(fileDescriptor.fd);
+    let buffer = addon.mmapGetBuffer(mapping.handle);
+   
+    console.log(`buffer ${buffer}\nlen ${buffer.length}`);
 
     await fileDescriptor.close();
     console.log('File closed successfully.');

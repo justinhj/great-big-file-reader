@@ -51,7 +51,11 @@ struct MappedFile {
   /* const string &path; */
   uint64_t length;
   uint64_t handle;
+  void *data;
 };
+
+// TODO instead of global should be a static map, with handle as key, in the class
+MappedFile mf;
 
 Napi::Value MMapFileFromFileDescriptor(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
@@ -80,13 +84,14 @@ Napi::Value MMapFileFromFileDescriptor(const Napi::CallbackInfo &info) {
   }
 
   // TODO cast is not safe, need to ensure the long long fits
-  MappedFile mf {static_cast<uint64_t>(st.st_size), nextHandle++};
-
+  mf = {static_cast<uint64_t>(st.st_size), nextHandle++, data};
   // TODO this would be stored in a global or static map of handle to structure
   // TODO include the file path 
   Napi::Object obj = Napi::Object::New(env);
 
   // Add properties to the object
+  // TODO types are sloppy here, handle should be 32 bit -> number maybe
+  // TODO length should be big int
   obj.Set("length", mf.length);
   obj.Set("handle", mf.handle);
 
@@ -100,10 +105,26 @@ Napi::String Method(const Napi::CallbackInfo& info) {
   return Napi::String::New(env, ph.get());
 }
 
+// Return a buffer for reading the file
+Napi::Value MMapGetBuffer(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  // TODO other input param should be the desired size of the buffer
+  // input parameter must be a valid handle
+  if (info.Length() < 1 || !info[0].IsNumber()) {
+    Napi::TypeError::New(env, "mmap handle must be provided as an argument").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  Napi::Buffer<uint8_t> buffer = Napi::Buffer<uint8_t>::New(env, static_cast<uint8_t*>(mf.data) + 40960, 4096);
+
+  return buffer;
+}
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set(Napi::String::New(env, "great_big_file_reader"), Napi::Function::New(env, Method));
   exports.Set(Napi::String::New(env, "getFileLength"), Napi::Function::New(env, GetFileLength));
   exports.Set(Napi::String::New(env, "mmapFileFromFileDescriptor"), Napi::Function::New(env, MMapFileFromFileDescriptor));
+  exports.Set(Napi::String::New(env, "mmapGetBuffer"), Napi::Function::New(env, MMapGetBuffer));
   return exports;
 }
 
