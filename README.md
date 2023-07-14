@@ -4,6 +4,12 @@ The Great Big File Reader is an npm plugin that provides an efficient way to rea
 
 With Great Big File Reader you can acquire as many Buffers as you want, each with an individual offset into the file and length (where length is limited to the Buffer size limits mentioned above).
 
+## Technical notes
+
+node.js does not expose the memory map (mmap) operating system commands and leaves it to third party libraries like this one. Once a file is memory mapped, accessing it will cause blocking IO and/or page faults whenever the OS feels it needs to do so.
+
+The code is written in C++ and uses the [https://github.com/nodejs/node-addon-api](node-addon-api) which is a C++ friendly wrapper around the stable C interface of the Node-API. This provides a nice compromise between performance and language facility.
+
 ## Features
 
 - Efficient read-only access to large files using mmap.

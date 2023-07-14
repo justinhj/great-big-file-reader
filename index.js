@@ -1,25 +1,28 @@
 const fs = require('fs').promises;
 
-var addon = require('bindings')('great_big_file_reader');
+var gbfr = require('bindings')('great-big-file-reader');
 
-console.log(addon.great_big_file_reader()); // 'world'
+BigInt.prototype.toJSON = function() { return this.toString() }
 
 async function openFile(filePath) {
   try {
-    const fileDescriptor = await fs.open(filePath, 'r');
+    const fileHandle = await fs.open(filePath, 'r');
 
-    console.log(`fileDescriptor ${JSON.stringify(fileDescriptor)} ${typeof fileDescriptor.fd}`);
-
-    const len = addon.getFileLength(fileDescriptor.fd);
-    console.log(`file ${filePath} length is ${len}`);
+    // const len = gbfr.getFileLength(fileHandle.fd);
+    // console.log(`file ${filePath} length is ${len}`);
 
     console.log(`mmapping ${filePath}`); 
-    let mapping = addon.mmapFileFromFileDescriptor(fileDescriptor.fd);
-    let buffer = addon.mmapGetBuffer(mapping.handle);
+    let mapping = gbfr.mmapFileFromFileDescriptor(filePath, fileHandle.fd);
+
+    console.log(JSON.stringify(mapping));
+
+    let buffer = gbfr.mmapGetBuffer(mapping.handle, 14359000000n, 84);
    
     console.log(`buffer ${buffer}\nlen ${buffer.length}`);
 
-    await fileDescriptor.close();
+    gbfr.unmapFile(mapping.handle);
+
+    await fileHandle.close();
     console.log('File closed successfully.');
   } catch (error) {
     console.error('Error caught: ', error);
@@ -29,3 +32,7 @@ async function openFile(filePath) {
 // Example usage
 const filePath = '/Users/justin.heyes-jones/projects/lantern/build/sparkey100million.spl';
 openFile(filePath);
+
+let temp = 2;
+
+module.exports = temp;
