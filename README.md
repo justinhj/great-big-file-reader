@@ -32,20 +32,37 @@ npm install great-big-file-reader
 
 Here's an example demonstrating how to use the Great Big File Reader in your Node.js application:
 
+Note there are some interface improvements needed before this usable as a package.
+
 ```javascript
 const { readFile } = require('great-big-file-reader');
 
-const filePath = '/path/to/large/file.txt';
+async function openFile(filePath) {
+  try {
+    const fileHandle = await fs.open(filePath, 'r');
 
-// Read the entire file into a buffer
-const buffer = readFile(filePath);
-console.log(buffer.toString());
+    // const len = gbfr.getFileLength(fileHandle.fd);
+    // console.log(`file ${filePath} length is ${len}`);
 
-// Read a specific portion of the file into a buffer
-const startOffset = 1024;
-const length = 4096;
-const partialBuffer = readFile(filePath, startOffset, length);
-console.log(partialBuffer.toString());
+    console.log(`mmapping ${filePath}`); 
+    let mapping = gbfr.mapFile(filePath, fileHandle.fd);
+
+    console.log(JSON.stringify(mapping));
+
+    let buffer = gbfr.getBuffer(mapping.handle, 14359000000n, 84);
+    console.log(`buffer ${buffer}\nlen ${buffer.length}`);
+
+    buffer = gbfr.getBuffer(mapping.handle, 0n, 128n);
+    console.log(`buffer ${buffer}\nlen ${buffer.length}`);
+
+    gbfr.unmapFile(mapping.handle);
+
+    await fileHandle.close();
+    console.log('File closed successfully.');
+  } catch (error) {
+    console.error('Error caught: ', error);
+  }
+}
 ```
 
 ## Contributing
