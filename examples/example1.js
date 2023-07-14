@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 
-import * as gbfr from './lib/index.js'; 
+import * as gbfr from '../lib/index.js'; 
 
 BigInt.prototype.toJSON = function() { return this.toString() }
 
