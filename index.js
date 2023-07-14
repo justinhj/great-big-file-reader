@@ -12,12 +12,14 @@ async function openFile(filePath) {
     // console.log(`file ${filePath} length is ${len}`);
 
     console.log(`mmapping ${filePath}`); 
-    let mapping = gbfr.mmapFileFromFileDescriptor(filePath, fileHandle.fd);
+    let mapping = gbfr.mapFile(filePath, fileHandle.fd);
 
     console.log(JSON.stringify(mapping));
 
-    let buffer = gbfr.mmapGetBuffer(mapping.handle, 14359000000n, 84);
-   
+    let buffer = gbfr.getBuffer(mapping.handle, 14359000000n, 84);
+    console.log(`buffer ${buffer}\nlen ${buffer.length}`);
+
+    buffer = gbfr.getBuffer(mapping.handle, 0n, 128n);
     console.log(`buffer ${buffer}\nlen ${buffer.length}`);
 
     gbfr.unmapFile(mapping.handle);

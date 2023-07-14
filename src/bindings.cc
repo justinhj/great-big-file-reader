@@ -91,7 +91,7 @@ Napi::Value MMapFileFromFileDescriptor(const Napi::CallbackInfo &info) {
 //   handle, bigint, used to lookup which mmap file this is, the module tracks them in a map
 //   offset, bigint, starting position of buffer in the file
 //   length, number or bigint, length of the buffer (note that buffer.constants.MAX_LENGTH is a safe integer so number is sufficient)
-Napi::Value MMapGetBuffer(const Napi::CallbackInfo &info) {
+Napi::Value GetBuffer(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
   if(info.Length() < 3) {
@@ -137,11 +137,40 @@ Napi::Value MMapGetBuffer(const Napi::CallbackInfo &info) {
   return Napi::Buffer<uint8_t>::New(env, static_cast<uint8_t*>(mf.data) + offset, length);
 }
 
+Napi::Value UnmapFileFromHandle(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
 
+  if(info.Length() != 1) {
+    Napi::TypeError::New(env, "1 argument expected").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if(!info[0].IsBigInt()) {
+    Napi::TypeError::New(env, "mmap handle must be provided as a bigint argument").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  bool lossless;
+  int handle = info[0].As<Napi::BigInt>().Uint64Value(&lossless);
+  if(mfs.count(handle) == 0) {
+    Napi::TypeError::New(env, "Handle not found").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+  const MappedFile &mf = mfs.at(handle);
+
+  int result = munmap(mf.data, mf.length);
+  if(result != 0) {
+    Napi::Error::New(env, "umnmap failed").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+ 
+  return Napi::Boolean::New(env, true);
+}
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  exports.Set(Napi::String::New(env, "mmapFileFromFileDescriptor"), Napi::Function::New(env, MMapFileFromFileDescriptor));
-  exports.Set(Napi::String::New(env, "mmapGetBuffer"), Napi::Function::New(env, MMapGetBuffer));
+  exports.Set(Napi::String::New(env, "mapFile"), Napi::Function::New(env, MMapFileFromFileDescriptor));
+  exports.Set(Napi::String::New(env, "getBuffer"), Napi::Function::New(env, GetBuffer));
+  exports.Set(Napi::String::New(env, "unmapFile"), Napi::Function::New(env, UnmapFileFromHandle));
   return exports;
 }
 
