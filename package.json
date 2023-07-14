@@ -2,7 +2,8 @@
   "name": "great-big-file-reader",
   "version": "0.0.1",
   "description": "Uses the node addon api to provide native handling of large files using mmap. It provides an interface to create a buffer into the file at specified offsets and lengths, avoiding issues when the file is bigger than the maximum Node buffer size.",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "type": "module",
   "keywords": [
     "mmap",
     "large",
@@ -15,7 +16,8 @@
   "license": "ISC",
   "devDependencies": {
     "node-addon-api": "^7.0.0",
-    "node-gyp": "^9.4.0"
+    "node-gyp": "^9.4.0",
+    "tape": "^5.6.5"
   },
   "dependencies": {
     "bindings": "^1.5.0"
