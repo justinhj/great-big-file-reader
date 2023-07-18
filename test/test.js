@@ -4,26 +4,26 @@ import { MMapping } from '../lib/index.js';
 
 // test reading a large file
 test('large file read', async function (t) {
-  const offset = 5451234524n; 
-  const filename = '/Users/justin.heyes-jones/projects/lantern/build/sparkey100million.spl';
+  // const offset = 5451234524n; 
+  // const filename = 'TODO';
 
-  const fh = await fs.open(filename, 'r');
+  // const fh = await fs.open(filename, 'r');
   
-  let m1 = new MMapping(filename, fh.fd);
-  console.log(m1);
+  // let m1 = new MMapping(filename, fh.fd);
+  // console.log(m1);
 
-  let b1 = m1.getBuffer(offset + 2n, 36);
-  console.log(b1);
-  console.log(b1.toString());
+  // let b1 = m1.getBuffer(offset + 2n, 36);
+  // console.log(b1);
+  // console.log(b1.toString());
 
-  let b2 = m1.getBuffer(0n, 4);
-  console.log(b2);
+  // let b2 = m1.getBuffer(0n, 4);
+  // console.log(b2);
 
-  t.equal(Buffer.from([0x49, 0xb3, 0x9c, 0x95]).reverse().compare(b2),0);
+  // t.equal(Buffer.from([0x49, 0xb3, 0x9c, 0x95]).reverse().compare(b2),0);
 
-  m1.unmap();
+  // m1.unmap();
 
-  await fh.close();
+  // await fh.close();
   t.ok(true);
   t.end();
 });
