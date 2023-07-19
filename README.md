@@ -35,27 +35,21 @@ Here's an example demonstrating how to use the Great Big File Reader in your Nod
 Note there are some interface improvements needed before this usable as a package.
 
 ```javascript
-const { readFile } = require('great-big-file-reader');
+import { MMapping } from '../lib/index.js';  
 
-async function openFile(filePath) {
+async function example(filePath) {
   try {
     const fileHandle = await fs.open(filePath, 'r');
 
-    // const len = gbfr.getFileLength(fileHandle.fd);
-    // console.log(`file ${filePath} length is ${len}`);
+    let mmapping = new MMapping(filePath, fileHandle.fd);
 
-    console.log(`mmapping ${filePath}`); 
-    let mapping = gbfr.mapFile(filePath, fileHandle.fd);
+    // open a buffer at the first 1kb
+    let buffer = mmapping.getBuffer(0n, 1024);
+    let first = buffer.readBigUInt64LE(0);
+    let last = buffer.readBigUint64LE(1024 - 8);
 
-    console.log(JSON.stringify(mapping));
-
-    let buffer = gbfr.getBuffer(mapping.handle, 14359000000n, 84);
-    console.log(`buffer ${buffer}\nlen ${buffer.length}`);
-
-    buffer = gbfr.getBuffer(mapping.handle, 0n, 128n);
-    console.log(`buffer ${buffer}\nlen ${buffer.length}`);
-
-    gbfr.unmapFile(mapping.handle);
+    // you can open multiple buffers with different offsets
+    // and lengths. let them go out of scope to be gc'd
 
     await fileHandle.close();
     console.log('File closed successfully.');
