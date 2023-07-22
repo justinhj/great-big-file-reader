@@ -75,7 +75,7 @@ test('unhappy paths', async function(t) {
   }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
   t.throws(function () {
-    mmapping.getBuffer(3072n, buffer.constants.MAX_LENGTH + 1);
+    mmapping.getBuffer(0n, buffer.constants.MAX_LENGTH + 1);
   }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
   mmapping.unmap();
