@@ -52,7 +52,7 @@ test('unhappy paths', async function(t) {
   // mmap the file
   let mmapping = new MMapping(testFilePath, fh.fd);
 
-  t.plan(6);
+  t.plan(5);
 
   t.throws(function () {
     mmapping.getBuffer(-1n, 1024);
