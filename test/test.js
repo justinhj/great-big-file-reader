@@ -1,6 +1,7 @@
 import test from 'tape';
 import { promises } from 'fs';
 import * as fs from 'fs';
+import * as buffer from 'node:buffer';
 import { MMapping } from '../lib/index.js';  
 
 const testFilePath = './testfile.dat';
@@ -51,7 +52,7 @@ test('unhappy paths', async function(t) {
   // mmap the file
   let mmapping = new MMapping(testFilePath, fh.fd);
 
-  t.plan(4);
+  t.plan(6);
 
   t.throws(function () {
     mmapping.getBuffer(-1n, 1024);
@@ -68,6 +69,14 @@ test('unhappy paths', async function(t) {
   t.throws(function () {
     mmapping.getBuffer(3072n, 2024);
   }, /offset plus length must be within the file/);
+
+  t.throws(function () {
+    mmapping.getBuffer(3072n, BigInt(buffer.constants.MAX_LENGTH) + 1n);
+  }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
+
+  t.throws(function () {
+    mmapping.getBuffer(3072n, buffer.constants.MAX_LENGTH + 1);
+  }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
   mmapping.unmap();
   t.end();

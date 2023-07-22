@@ -7,8 +7,11 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <cstdint>
+#include <v8.h>
+#include <sstream>
 
 using std::string;
+using std::ostringstream;
 using std::unordered_map;
 
 // TODO rename this file, it doesn't need to be called bindings
@@ -132,20 +135,27 @@ Napi::Value GetBuffer(const Napi::CallbackInfo &info) {
 
   if(info[2].IsBigInt()) {
     int64_t signed_length = info[2].As<Napi::BigInt>().Int64Value(&lossless);
-    if(signed_length > 0) {
+    if(signed_length < 1) {
       Napi::RangeError::New(env, "length should be greater than zero").ThrowAsJavaScriptException();
       return env.Null();
     }
     length = info[2].As<Napi::BigInt>().Uint64Value(&lossless);
   } else if(info[2].IsNumber()) {
     int64_t signed_length = info[2].As<Napi::Number>().Int64Value();
-    if(signed_length < 0) {
+    if(signed_length < 1) {
       Napi::RangeError::New(env, "length should be greater than zero").ThrowAsJavaScriptException();
       return env.Null();
     }
-    length = info[2].As<Napi::Number>().Uint32Value();
+    length = info[2].As<Napi::Number>().Int64Value();
   } else {
     Napi::TypeError::New(env, "length should be a bigint or number").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if(length > v8::TypedArray::kMaxLength) {
+    ostringstream stream;
+    stream << "length " << length << " exceeds the buffer.constants.MAX_LENGTH (" << v8::TypedArray::kMaxLength << ")";
+    Napi::TypeError::New(env, stream.str()).ThrowAsJavaScriptException();
     return env.Null();
   }
 
