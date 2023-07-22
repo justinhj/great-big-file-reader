@@ -46,6 +46,33 @@ test('mapping with two buffers happy path', async function(t) {
   t.end();
 });
 
+test('unhappy paths', async function(t) {
+  const fh = await promises.open(testFilePath, 'r');
+  // mmap the file
+  let mmapping = new MMapping(testFilePath, fh.fd);
+
+  t.plan(4);
+
+  t.throws(function () {
+    mmapping.getBuffer(-1n, 1024);
+  }, /offset should not be negative/);
+
+  t.throws(function () {
+    mmapping.getBuffer(0n, -1024);
+  }, /length should be greater than zero/);
+
+  t.throws(function () {
+    mmapping.getBuffer(4096n, 1024);
+  }, /offset must be within the file/);
+
+  t.throws(function () {
+    mmapping.getBuffer(3072n, 2024);
+  }, /offset plus length must be within the file/);
+
+  mmapping.unmap();
+  t.end();
+});
+
 test.onFinish(() => {
   // Removing test file
   if (fs.existsSync(testFilePath)) {
