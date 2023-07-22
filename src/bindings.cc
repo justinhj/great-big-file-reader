@@ -7,9 +7,14 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <cstdint>
+#include <v8.h>
+#include <sstream>
 
 using std::string;
+using std::ostringstream;
 using std::unordered_map;
+
+// TODO rename this file, it doesn't need to be called bindings
 
 // Data
 // Monotonically increasing handle for the call to use to identify a particular file mapping
@@ -117,21 +122,54 @@ Napi::Value GetBuffer(const Napi::CallbackInfo &info) {
     return env.Null();
   }
 
+  // First convert the offset to a signed 64 bit so we can check it is not negative
+  int64_t signed_offset = info[1].As<Napi::BigInt>().Int64Value(&lossless);
+  if(signed_offset < 0) {
+    Napi::RangeError::New(env, "offset should not be negative").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
   uint64_t offset = info[1].As<Napi::BigInt>().Uint64Value(&lossless);
 
   uint64_t length;
 
   if(info[2].IsBigInt()) {
+    int64_t signed_length = info[2].As<Napi::BigInt>().Int64Value(&lossless);
+    if(signed_length < 1) {
+      Napi::RangeError::New(env, "length should be greater than zero").ThrowAsJavaScriptException();
+      return env.Null();
+    }
     length = info[2].As<Napi::BigInt>().Uint64Value(&lossless);
   } else if(info[2].IsNumber()) {
-    length = info[2].As<Napi::Number>().Uint32Value();
+    int64_t signed_length = info[2].As<Napi::Number>().Int64Value();
+    if(signed_length < 1) {
+      Napi::RangeError::New(env, "length should be greater than zero").ThrowAsJavaScriptException();
+      return env.Null();
+    }
+    length = info[2].As<Napi::Number>().Int64Value();
   } else {
     Napi::TypeError::New(env, "length should be a bigint or number").ThrowAsJavaScriptException();
     return env.Null();
   }
 
-  // TODO validate offset is less than file length
-  // TODO validate that offset + length is less than file length
+  if(length > v8::TypedArray::kMaxLength) {
+    ostringstream stream;
+    stream << "length " << length << " exceeds the buffer.constants.MAX_LENGTH (" << v8::TypedArray::kMaxLength << ")";
+    Napi::TypeError::New(env, stream.str()).ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  // validate offset is less than file length
+  // validate that offset + length is less than file length
+  if(offset >= mf.length) {
+    Napi::RangeError::New(env, "offset must be within the file").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if(offset + length > mf.length) {
+    Napi::RangeError::New(env, "offset plus length must be within the file").ThrowAsJavaScriptException();
+    return env.Null();
+  }
 
   // TODO better error handling than none
   return Napi::Buffer<uint8_t>::New(env, static_cast<uint8_t*>(mf.data) + offset, length);

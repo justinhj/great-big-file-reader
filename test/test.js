@@ -1,6 +1,7 @@
 import test from 'tape';
 import { promises } from 'fs';
 import * as fs from 'fs';
+import * as buffer from 'node:buffer';
 import { MMapping } from '../lib/index.js';  
 
 const testFilePath = './testfile.dat';
@@ -41,6 +42,41 @@ test('mapping with two buffers happy path', async function(t) {
   t.equal(first, 384n);
   last = buffer2.readBigUint64LE(1024 - 8);
   t.equal(last, 511n);
+
+  mmapping.unmap();
+  t.end();
+});
+
+test('unhappy paths', async function(t) {
+  const fh = await promises.open(testFilePath, 'r');
+  // mmap the file
+  let mmapping = new MMapping(testFilePath, fh.fd);
+
+  t.plan(6);
+
+  t.throws(function () {
+    mmapping.getBuffer(-1n, 1024);
+  }, /offset should not be negative/);
+
+  t.throws(function () {
+    mmapping.getBuffer(0n, -1024);
+  }, /length should be greater than zero/);
+
+  t.throws(function () {
+    mmapping.getBuffer(4096n, 1024);
+  }, /offset must be within the file/);
+
+  t.throws(function () {
+    mmapping.getBuffer(3072n, 2024);
+  }, /offset plus length must be within the file/);
+
+  t.throws(function () {
+    mmapping.getBuffer(3072n, BigInt(buffer.constants.MAX_LENGTH) + 1n);
+  }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
+
+  t.throws(function () {
+    mmapping.getBuffer(0n, buffer.constants.MAX_LENGTH + 1);
+  }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
   mmapping.unmap();
   t.end();
