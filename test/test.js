@@ -24,6 +24,18 @@ async function writeUInt64File(filePath) {
 
 await writeUInt64File(testFilePath);
 
+test('mapping the whole file', async function(t) {
+  const fh = await promises.open(testFilePath, 'r');
+  // mmap the file
+  let mmapping = new MMapping(testFilePath, fh.fd);
+
+  let buffer = mmapping.getBuffer(0n, 4096);
+  t.equal(buffer.length, 4096);
+
+  mmapping.unmap();
+  t.end();
+});
+
 test('mapping with two buffers happy path', async function(t) {
   const fh = await promises.open(testFilePath, 'r');
   // mmap the file
