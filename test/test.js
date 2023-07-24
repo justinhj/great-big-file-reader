@@ -1,4 +1,6 @@
 import test from 'tape';
+import tapSpec from 'tap-spec';
+
 import { promises } from 'fs';
 import * as fs from 'fs';
 import * as buffer from 'node:buffer';
@@ -23,6 +25,10 @@ async function writeUInt64File(filePath) {
 }
 
 await writeUInt64File(testFilePath);
+
+test.createStream()
+  .pipe(tapSpec())
+  .pipe(process.stdout);
 
 test('mapping the whole file', async function(t) {
   const fh = await promises.open(testFilePath, 'r');
