@@ -39,10 +39,6 @@ unordered_map<uint64_t, MappedFile> mfs;
 //   3. unmap the file from memory
 
 
-bool fitsInUint64(long long value) {
-  return value >= 0 && value <= std::numeric_limits<uint64_t>::max();
-}
-
 Napi::Value MMapFileFromFileDescriptor(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
@@ -65,12 +61,6 @@ Napi::Value MMapFileFromFileDescriptor(const Napi::CallbackInfo &info) {
     return env.Null();
   }
 
-  if(!fitsInUint64(st.st_size)) {
-    Napi::Error::New(env, "File length cannot fit uint64").ThrowAsJavaScriptException();
-    return env.Null();
-  }
-
-  /* log->data = mmap(NULL, log->data_len, PROT_READ, MAP_SHARED, fd, 0); */
   void *data = mmap(nullptr, st.st_size, PROT_READ, MAP_SHARED, fileDescriptor, 0);
   if(data == MAP_FAILED) {
     Napi::Error::New(env, "Failed to mmap").ThrowAsJavaScriptException();
