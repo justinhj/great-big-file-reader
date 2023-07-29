@@ -45,9 +45,11 @@ test('mapping the whole file', async function(t) {
 test('mapping with two buffers happy path', async function(t) {
   const fh = await promises.open(testFilePath, 'r');
   // mmap the file
+  console.log('mmap');
   let mmapping = new MMapping(testFilePath, fh.fd);
 
   // open a buffer at the first 1kb
+  console.log(`getbuffer 1 ${mmapping}`);
   let buffer = mmapping.getBuffer(0n, 1024);
   let first = buffer.readBigUInt64LE(0);
   t.equal(first, 0n);
@@ -55,6 +57,7 @@ test('mapping with two buffers happy path', async function(t) {
   t.equal(last, 127n);
 
   // open a second buffer in the last 1kb of the file
+  console.log('getbuffer 2');
   let buffer2 = mmapping.getBuffer(3072n, 1024);
   first = buffer2.readBigUInt64LE(0);
   t.equal(first, 384n);
