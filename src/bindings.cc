@@ -162,7 +162,12 @@ Napi::Value GetBuffer(const Napi::CallbackInfo &info) {
   }
 
   // TODO better error handling than none
-  return Napi::Buffer<uint8_t>::New(env, static_cast<uint8_t*>(mf.data) + offset, length);
+  try {
+    return Napi::Buffer<uint8_t>::New(env, static_cast<uint8_t*>(mf.data) + offset, length);
+  } catch (const Napi::Error& e) {
+    e.ThrowAsJavaScriptException();
+    return env.Null();
+  }
 }
 
 Napi::Value UnmapFileFromHandle(const Napi::CallbackInfo &info) {
