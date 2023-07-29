@@ -42,6 +42,7 @@ test('mapping the whole file', async function(t) {
   t.end();
 });
 
+BigInt.prototype.toJSON = function() { return this.toString() }
 test('mapping with two buffers happy path', async function(t) {
   const fh = await promises.open(testFilePath, 'r');
   // mmap the file
@@ -49,7 +50,7 @@ test('mapping with two buffers happy path', async function(t) {
   let mmapping = new MMapping(testFilePath, fh.fd);
 
   // open a buffer at the first 1kb
-  console.log(`getbuffer 1 ${mmapping}`);
+  console.log(`getbuffer 1 ${JSON.stringify(mmapping)}`);
   let buffer = mmapping.getBuffer(0n, 1024);
   let first = buffer.readBigUInt64LE(0);
   t.equal(first, 0n);
