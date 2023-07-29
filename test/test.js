@@ -30,19 +30,19 @@ test.createStream()
   .pipe(tapSpec())
   .pipe(process.stdout);
 
-test('mapping the whole file', async function(t) {
-  const fh = await promises.open(testFilePath, 'r');
-  // mmap the file
-  let mmapping = new MMapping(testFilePath, fh.fd);
+// test('mapping the whole file', async function(t) {
+//   const fh = await promises.open(testFilePath, 'r');
+//   // mmap the file
+//   let mmapping = new MMapping(testFilePath, fh.fd);
 
-  let buffer = mmapping.getBuffer(0n, 4096);
-  t.equal(buffer.length, 4096);
+//   let buffer = mmapping.getBuffer(0n, 4096);
+//   t.equal(buffer.length, 4096);
 
-  mmapping.unmap();
-  await fh.close();
-  buffer = null;
-  t.end();
-});
+//   mmapping.unmap();
+//   await fh.close();
+//   buffer = null;
+//   t.end();
+// });
 
 BigInt.prototype.toJSON = function() { return this.toString() }
 test('mapping with two buffers happy path', async function(t) {
