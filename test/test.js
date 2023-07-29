@@ -39,6 +39,8 @@ test('mapping the whole file', async function(t) {
   t.equal(buffer.length, 4096);
 
   mmapping.unmap();
+  await fh.close();
+  buffer = null;
   t.end();
 });
 
@@ -49,28 +51,31 @@ test('mapping with two buffers happy path', async function(t) {
   console.log('mmap');
   let mmapping = new MMapping(testFilePath, fh.fd);
 
+  let buffer1 = null;
   // open a buffer at the first 1kb
   console.log(`getbuffer 1 ${JSON.stringify(mmapping)}`);
   try {
-    let buffer = mmapping.getBuffer(0n, 1024);
-    let first = buffer.readBigUInt64LE(0);
+    buffer1 = mmapping.getBuffer(0n, 1024);
+    let first = buffer1.readBigUInt64LE(0);
     t.equal(first, 0n);
-    let last = buffer.readBigUint64LE(1024 - 8);
+    let last = buffer1.readBigUint64LE(1024 - 8);
     t.equal(last, 127n);
   } catch(e) {
     console.log(e.message);
   }
 
   // open a second buffer in the last 1kb of the file
-  {
-    console.log('getbuffer 2');
-    let buffer2 = mmapping.getBuffer(3072n, 1024);
-    let first = buffer2.readBigUInt64LE(0);
-    t.equal(first, 384n);
-    let last = buffer2.readBigUint64LE(1024 - 8);
-    t.equal(last, 511n);
-  }
+  console.log('getbuffer 2');
+  let buffer2 = mmapping.getBuffer(3072n, 1024);
+  let first2 = buffer2.readBigUInt64LE(0);
+  t.equal(first2, 384n);
+  let last2 = buffer2.readBigUint64LE(1024 - 8);
+  t.equal(last2, 511n);
+
   mmapping.unmap();
+  await fh.close();
+  buffer1 = null;
+  buffer2 = null;
   t.end();
 });
 
@@ -106,6 +111,7 @@ test('unhappy paths', async function(t) {
   }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
   mmapping.unmap();
+  await fh.close();
   t.end();
 });
 
