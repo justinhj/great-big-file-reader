@@ -25,31 +25,28 @@ async function writeUInt64File(filePath) {
 }
 
 await writeUInt64File(testFilePath);
+const fileHandle = await promises.open(testFilePath, 'r');
 
+// Just used to pass the tape results to tape-spec for prettier output
 test.createStream()
   .pipe(tapSpec())
   .pipe(process.stdout);
 
-// test('mapping the whole file', async function(t) {
-//   const fh = await promises.open(testFilePath, 'r');
-//   // mmap the file
-//   let mmapping = new MMapping(testFilePath, fh.fd);
-
-//   let buffer = mmapping.getBuffer(0n, 4096);
-//   t.equal(buffer.length, 4096);
-
-//   mmapping.unmap();
-//   await fh.close();
-//   buffer = null;
-//   t.end();
-// });
+test('mapping the whole file', async function(t) {
+  // mmap the file
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
+  let buffer = mmapping.getBuffer(0n, 4096);
+  t.equal(buffer.length, 4096);
+  mmapping.unmap();
+  t.end();
+});
 
 BigInt.prototype.toJSON = function() { return this.toString() }
+
 test('mapping with two buffers happy path', async function(t) {
-  const fh = await promises.open(testFilePath, 'r');
   // mmap the file
   console.log('mmap');
-  let mmapping = new MMapping(testFilePath, fh.fd);
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
 
   let buffer1 = null;
   // open a buffer at the first 1kb
@@ -73,16 +70,12 @@ test('mapping with two buffers happy path', async function(t) {
   t.equal(last2, 511n);
 
   mmapping.unmap();
-  await fh.close();
-  buffer1 = null;
-  buffer2 = null;
   t.end();
 });
 
 test('unhappy paths', async function(t) {
-  const fh = await promises.open(testFilePath, 'r');
   // mmap the file
-  let mmapping = new MMapping(testFilePath, fh.fd);
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
 
   t.plan(6);
 
@@ -111,11 +104,11 @@ test('unhappy paths', async function(t) {
   }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
   mmapping.unmap();
-  await fh.close();
   t.end();
 });
 
 test.onFinish(() => {
+  fileHandle.close();
   // Removing test file
   if (fs.existsSync(testFilePath)) {
     fs.unlinkSync(testFilePath);
