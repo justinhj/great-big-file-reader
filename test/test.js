@@ -1,4 +1,5 @@
 import test from 'tape';
+import tapSpec from 'tap-spec';
 import { promises } from 'fs';
 import * as fs from 'fs';
 import * as buffer from 'node:buffer';
@@ -23,34 +24,41 @@ async function writeUInt64File(filePath) {
 }
 
 await writeUInt64File(testFilePath);
+const fileHandle = await promises.open(testFilePath, 'r');
+
+// Just used to pass the tape results to tape-spec for prettier output
+test.createStream()
+  .pipe(tapSpec())
+  .pipe(process.stdout);
+
+BigInt.prototype.toJSON = function() { return this.toString() }
 
 test('mapping with two buffers happy path', async function(t) {
-  const fh = await promises.open(testFilePath, 'r');
   // mmap the file
-  let mmapping = new MMapping(testFilePath, fh.fd);
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
 
+  let buffer1 = null;
   // open a buffer at the first 1kb
-  let buffer = mmapping.getBuffer(0n, 1024);
-  let first = buffer.readBigUInt64LE(0);
+  buffer1 = mmapping.getBuffer(0n, 1024);
+  let first = buffer1.readBigUInt64LE(0);
   t.equal(first, 0n);
-  let last = buffer.readBigUint64LE(1024 - 8);
+  let last = buffer1.readBigUint64LE(1024 - 8);
   t.equal(last, 127n);
 
   // open a second buffer in the last 1kb of the file
   let buffer2 = mmapping.getBuffer(3072n, 1024);
-  first = buffer2.readBigUInt64LE(0);
-  t.equal(first, 384n);
-  last = buffer2.readBigUint64LE(1024 - 8);
-  t.equal(last, 511n);
+  let first2 = buffer2.readBigUInt64LE(0);
+  t.equal(first2, 384n);
+  let last2 = buffer2.readBigUint64LE(1024 - 8);
+  t.equal(last2, 511n);
 
   mmapping.unmap();
   t.end();
 });
 
 test('unhappy paths', async function(t) {
-  const fh = await promises.open(testFilePath, 'r');
   // mmap the file
-  let mmapping = new MMapping(testFilePath, fh.fd);
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
 
   t.plan(6);
 
@@ -82,7 +90,18 @@ test('unhappy paths', async function(t) {
   t.end();
 });
 
+test('mapping the whole file', async function(t) {
+  // mmap the file
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
+  let buffer = mmapping.getBuffer(0n, 4096);
+  let _buffer = mmapping.getBuffer(0n, 4096);
+  t.equal(buffer.length, 4096);
+  mmapping.unmap();
+  t.end();
+});
+
 test.onFinish(() => {
+  fileHandle.close();
   // Removing test file
   if (fs.existsSync(testFilePath)) {
     fs.unlinkSync(testFilePath);
