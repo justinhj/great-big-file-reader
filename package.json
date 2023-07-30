@@ -12,6 +12,9 @@
     "mapping",
     "buffers"
   ],
+  "engines": {
+    "node": ">=17.0"
+  },
   "author": "Justin Heyes-Jones",
   "license": "ISC",
   "devDependencies": {
