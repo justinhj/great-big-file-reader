@@ -32,15 +32,6 @@ test.createStream()
   .pipe(tapSpec())
   .pipe(process.stdout);
 
-test('mapping the whole file', async function(t) {
-  // mmap the file
-  let mmapping = new MMapping(testFilePath, fileHandle.fd);
-  let buffer = mmapping.getBuffer(0n, 4096);
-  t.equal(buffer.length, 4096);
-  mmapping.unmap();
-  t.end();
-});
-
 BigInt.prototype.toJSON = function() { return this.toString() }
 
 test('mapping with two buffers happy path', async function(t) {
@@ -103,6 +94,15 @@ test('unhappy paths', async function(t) {
     mmapping.getBuffer(0n, buffer.constants.MAX_LENGTH + 1);
   }, /length 4294967297 exceeds the buffer\.constants\.MAX_LENGTH \(4294967296\)/);
 
+  mmapping.unmap();
+  t.end();
+});
+
+test('mapping the whole file', async function(t) {
+  // mmap the file
+  let mmapping = new MMapping(testFilePath, fileHandle.fd);
+  let buffer = mmapping.getBuffer(0n, 4096);
+  t.equal(buffer.length, 4096);
   mmapping.unmap();
   t.end();
 });
